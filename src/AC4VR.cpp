@@ -182,7 +182,7 @@ void run() {
         VrFrame frame{};
         if (runtime.poll(frame)) {
             bridge.applyCamera(frame);
-            bridge.updatePointingRay(frame.right);
+            bridge.updatePointingRay(frame);
             bridge.updateClimb(frame);
             bridge.updateShipControls(frame);
         }
