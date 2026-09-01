@@ -1,0 +1,39 @@
+name: Build AC4VR
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Configure
+        shell: pwsh
+        run: cmake -S . -B build -A x64 "-DCMAKE_INSTALL_PREFIX=$env:GITHUB_WORKSPACE\package"
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Package
+        run: cmake --install build --config Release
+
+      - name: Create ZIP
+        shell: pwsh
+        run: Compress-Archive -Path package\* -DestinationPath AC4VR-${{ github.sha }}.zip
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AC4VR-${{ github.sha }}
+          path: AC4VR-${{ github.sha }}.zip
+          if-no-files-found: error
