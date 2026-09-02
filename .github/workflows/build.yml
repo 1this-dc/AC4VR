@@ -25,7 +25,6 @@ jobs:
         run: |
           cmake --version
           git --version
-          cl.exe 2>&1 | Select-Object -First 4
 
       - name: Configure
         shell: pwsh
