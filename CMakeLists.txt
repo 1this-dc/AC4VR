@@ -14,7 +14,11 @@ add_library(AC4VR SHARED src/AC4VR.cpp)
 target_compile_features(AC4VR PRIVATE cxx_std_20)
 target_compile_definitions(AC4VR PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX AC4VR_EXPORTS)
 target_include_directories(AC4VR PRIVATE ${openvr_SOURCE_DIR}/headers ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(AC4VR PRIVATE openvr_api)
+if(WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+    target_link_libraries(AC4VR PRIVATE openvr_api64)
+else()
+    target_link_libraries(AC4VR PRIVATE openvr_api)
+endif()
 set_target_properties(AC4VR PROPERTIES OUTPUT_NAME "AC4VR")
 
 add_custom_command(TARGET AC4VR POST_BUILD
