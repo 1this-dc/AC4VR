@@ -7,9 +7,11 @@ Native SteamVR plugin foundation for an Assassin's Creed IV: Black Flag Resynced
 - OpenVR runtime startup and shutdown.
 - Headset and left/right controller pose polling.
 - Controller grip and trigger state for interaction, climbing, and ship input layers.
-- A versioned C API for the Resynced plugin to connect first-person camera, pointing UI, free climbing, and ship controls.
+- **D3D12 stereo eye rendering infrastructure** with SteamVR compositor submission (NEW).
+- **Per-eye projection matrices and view transforms** for VR rendering.
+- A versioned C API (v2) for the Resynced plugin to connect first-person camera, pointing UI, free climbing, ship controls, and D3D12 rendering.
 
-The bridge is intentionally unbound: Resynced's executable version, loader contract, renderer, and gameplay addresses are not present in this repository. Filling it with guessed offsets would be unsafe. The game-specific work must be implemented against the exact installed build, ideally through a documented mod-loader API or validated signatures.
+The bridge is intentionally unbound: Resynced's executable version, loader contract, renderer device context, and gameplay addresses are not present in this repository. Filling it with guessed offsets would be unsafe. The game-specific work must be implemented against the exact installed build, ideally through a documented mod-loader API or validated signatures.
 
 ## Build and package
 
@@ -42,7 +44,7 @@ git push -u origin main
 
 After the push, open the repository's **Actions** tab and download the artifact from the completed **Build AC4VR** run. GitHub authentication may open a browser or require a personal access token; never put that token in this project or workflow file.
 
-The Resynced loader must load `AC4VR.dll`, call `AC4VR_RegisterGameCallbacks` with `apiVersion=1`, and then call `AC4VR_Start`. Call `AC4VR_Stop`, then call `AC4VR_RegisterGameCallbacks(NULL)` before unloading the DLL. Callbacks must not call `AC4VR_Stop` themselves. The callback contract is in `include/AC4VR_API.h`; callbacks are invoked once per tracked VR frame.
+The Resynced loader must load `AC4VR.dll`, call `AC4VR_RegisterGameCallbacks` with `apiVersion=2` (or `apiVersion=1` for legacy support), and then call `AC4VR_Start`. Call `AC4VR_Stop`, then call `AC4VR_RegisterGameCallbacks(NULL)` before unloading the DLL. Callbacks must not call `AC4VR_Stop` themselves. The callback contract is in `include/AC4VR_API.h`; callbacks are invoked once per tracked VR frame.
 
 ## Start and play
 
@@ -59,7 +61,16 @@ This repository does not include the Resynced loader adapter. Until that adapter
 ## Loader integration
 
 1. Confirm the Resynced loader/plugin ABI and exact game executable hash.
-2. Bind the camera callback to the camera transform and stereo render path.
-3. Bind the pointing callback to the game's UI hit-test, trigger click, and haptic feedback.
-4. Bind grip-relative hand motion to climbable-surface queries and player movement.
-5. Map wheel, sail, camera, and combat actions through the ship callback.
+2. **Provide D3D12 device and command queue** to the VR runtime:
+   - Call `AC4VR_SetD3D12Resources(device, commandQueue)` after game initializes D3D12.
+   - This enables stereo rendering pipeline integration.
+3. **Implement stereo camera callback**:
+   - Render left eye to render target using `StereoRenderer::getProjectionMatrix(Eye_Left)`.
+   - Render right eye to render target using `StereoRenderer::getProjectionMatrix(Eye_Right)`.
+   - Submit both textures to SteamVR using `StereoRenderer::submitFrame(eyeTextures, eyePoses)`.
+4. Bind the pointing callback to the game's UI hit-test, trigger click, and haptic feedback.
+5. Bind grip-relative hand motion to climbable-surface queries and player movement.
+6. Map wheel, sail, camera, and combat actions through the ship callback.
+7. (Optional) Render Edward's hands and body by attaching character models to controller/head poses.
+
+See [D3D12_RENDERING_GUIDE.md](D3D12_RENDERING_GUIDE.md) for detailed stereo rendering implementation instructions.
