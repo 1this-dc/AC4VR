@@ -12,24 +12,54 @@ permissions:
 jobs:
   build:
     runs-on: windows-2022
+    env:
+      BUILD_DIR: ${{ github.workspace }}\build
+      PACKAGE_DIR: ${{ github.workspace }}\package
 
     steps:
       - name: Check out source
         uses: actions/checkout@v5
 
+      - name: Show tool versions
+        shell: pwsh
+        run: |
+          cmake --version
+          git --version
+          cl.exe 2>&1 | Select-Object -First 4
+
       - name: Configure
         shell: pwsh
-        run: cmake -S . -B build -A x64 "-DCMAKE_INSTALL_PREFIX=$env:GITHUB_WORKSPACE\package"
+        run: >-
+          cmake -S . -B "$env:BUILD_DIR" -A x64
+          -DCMAKE_INSTALL_PREFIX="$env:PACKAGE_DIR"
+          -DFETCHCONTENT_QUIET=OFF
 
       - name: Build
-        run: cmake --build build --config Release --parallel
+        shell: pwsh
+        run: cmake --build "$env:BUILD_DIR" --config Release --parallel 2 -- /v:minimal
 
-      - name: Package
-        run: cmake --install build --config Release
+      - name: Install package
+        shell: pwsh
+        run: cmake --install "$env:BUILD_DIR" --config Release
+
+      - name: Verify package
+        shell: pwsh
+        run: |
+          $required = @(
+            "$env:PACKAGE_DIR\AC4VR.dll",
+            "$env:PACKAGE_DIR\ac4vr.ini",
+            "$env:PACKAGE_DIR\include\AC4VR_API.h"
+          )
+          foreach ($file in $required) {
+            if (-not (Test-Path -LiteralPath $file)) {
+              throw "Package is missing: $file"
+            }
+          }
+          Get-ChildItem -Recurse -File $env:PACKAGE_DIR | Select-Object FullName, Length
 
       - name: Create ZIP
         shell: pwsh
-        run: Compress-Archive -Path package\* -DestinationPath AC4VR-${{ github.sha }}.zip
+        run: Compress-Archive -Path "$env:PACKAGE_DIR\*" -DestinationPath "AC4VR-${{ github.sha }}.zip"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
