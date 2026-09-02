@@ -10,14 +10,18 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(openvr)
 
-add_library(AC4VR SHARED src/AC4VR.cpp)
+add_library(AC4VR SHARED 
+    src/AC4VR.cpp 
+    src/D3D12Hook.cpp 
+    src/StereoRenderer.cpp
+)
 target_compile_features(AC4VR PRIVATE cxx_std_20)
 target_compile_definitions(AC4VR PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX AC4VR_EXPORTS OPENVR_BUILD_STATIC)
 target_include_directories(AC4VR PRIVATE ${openvr_SOURCE_DIR}/headers ${CMAKE_CURRENT_SOURCE_DIR}/include)
 if(WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 8)
-    target_link_libraries(AC4VR PRIVATE openvr_api64)
+    target_link_libraries(AC4VR PRIVATE openvr_api64 d3d12 dxgi dxguid)
 else()
-    target_link_libraries(AC4VR PRIVATE openvr_api)
+    target_link_libraries(AC4VR PRIVATE openvr_api d3d12 dxgi dxguid)
 endif()
 set_target_properties(AC4VR PROPERTIES OUTPUT_NAME "AC4VR")
 

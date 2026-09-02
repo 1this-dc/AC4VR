@@ -12,7 +12,11 @@
 extern "C" {
 #endif
 
-#define AC4VR_API_VERSION 1u
+#define AC4VR_API_VERSION 2u
+
+// Opaque D3D12 device and command queue pointers
+typedef void* AC4VR_D3D12Device;
+typedef void* AC4VR_D3D12CommandQueue;
 
 typedef struct AC4VR_Vec3 {
     float x;
@@ -48,6 +52,7 @@ typedef struct AC4VR_GameCallbacks {
 } AC4VR_GameCallbacks;
 
 AC4VR_API int AC4VR_CALL AC4VR_RegisterGameCallbacks(const AC4VR_GameCallbacks* callbacks);
+AC4VR_API void AC4VR_CALL AC4VR_SetD3D12Resources(AC4VR_D3D12Device device, AC4VR_D3D12CommandQueue commandQueue);
 AC4VR_API void AC4VR_CALL AC4VR_Start(void);
 AC4VR_API void AC4VR_CALL AC4VR_Stop(void);
 AC4VR_API int AC4VR_CALL AC4VR_IsRunning(void);

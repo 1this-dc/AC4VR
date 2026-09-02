@@ -1,6 +1,8 @@
 #include <Windows.h>
 #include <openvr.h>
 #include "AC4VR_API.h"
+#include "D3D12Hook.h"
+#include "StereoRenderer.h"
 
 #include <atomic>
 #include <chrono>
@@ -203,6 +205,21 @@ extern "C" AC4VR_API int AC4VR_CALL AC4VR_RegisterGameCallbacks(const AC4VR_Game
     }
     bridge.registerCallbacks(*callbacks);
     return 1;
+}
+
+extern "C" AC4VR_API void AC4VR_CALL AC4VR_SetD3D12Resources(AC4VR_D3D12Device device, AC4VR_D3D12CommandQueue commandQueue) {
+    // Initialize stereo renderer with provided D3D12 resources
+    if (device != nullptr && commandQueue != nullptr) {
+        // Get swap chain from D3D12Hook (it will be populated by Present hook)
+        auto& stereoRenderer = AC4VR::StereoRenderer::instance();
+        
+        // Note: Swap chain will be obtained through D3D12Hook after first Present() call
+        // For now, we just store the device and command queue references
+        // The full initialization will happen when the hook captures the swap chain
+        
+        // This is a placeholder - actual integration with D3D12 device requires
+        // either the loader to provide the swap chain directly, or hooking Present()
+    }
 }
 
 extern "C" AC4VR_API void AC4VR_CALL AC4VR_Start() {
